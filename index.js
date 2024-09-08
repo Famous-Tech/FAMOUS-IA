@@ -17,6 +17,7 @@ const store = makeInMemoryStore({
 
 let phoneNumber = "50943782508"; // Numéro de téléphone par défaut
 
+
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 const useMobile = process.argv.includes("--mobile");
 
@@ -93,8 +94,8 @@ async function startBot() {
             }
 
             // Utilisation de l'IA pour générer une réponse avec support multilingue (Français, Anglais, Créole)
-            const replyText = await generateResponse(text, isFirstInteraction);
-            await bot.sendMessage(sender, { text: replyText });
+            const reply = await generateResponse(text, isFirstInteraction);
+            await bot.sendMessage(sender, reply);
         }
     });
 
@@ -113,13 +114,14 @@ async function startBot() {
 
 startBot();
 
-let file = require.resolve(__filename);
-fs.watchFile(file, () => {
-    fs.unwatchFile(file);
-    console.log(chalk.redBright(`Update ${__filename}`));
-    delete require.cache[file];
-    require(file);
-});
+// Supprimez cette partie car elle utilise `require`
+// let file = require.resolve(__filename);
+// fs.watchFile(file, () => {
+//     fs.unwatchFile(file);
+//     console.log(chalk.redBright(`Update ${__filename}`));
+//     delete require.cache[file];
+//     require(file);
+// });
 
 process.on('uncaughtException', function (err) {
     let e = String(err);
