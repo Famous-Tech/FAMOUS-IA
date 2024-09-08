@@ -16,7 +16,6 @@ const store = makeInMemoryStore({
 });
 
 let phoneNumber = "50943782508"; // Numéro de téléphone par défaut
-let owner = JSON.parse(fs.readFileSync('./database/owner.json'));
 
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 const useMobile = process.argv.includes("--mobile");
