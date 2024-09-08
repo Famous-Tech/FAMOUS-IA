@@ -8,8 +8,8 @@ const services = {
     fr: [
         "Nous offrons des services de conseil en gestion.",
         "Nous fournissons des solutions de marketing digital.",
-         "Nous offrons des services de développement web."
-],
+        "Nous offrons des services de développement web."
+    ],
     ht: [
         "Nou bay sèvis konsiltasyon jesyon.",
         "Nou ofri solisyon maketing dijital.",        
@@ -112,4 +112,4 @@ async function generateResponse(text, isFirstInteraction) {
     return { text: "I don't understand your request. Could you please rephrase?" };
 }
 
-module.exports = { generateResponse };
+export { generateResponse };
