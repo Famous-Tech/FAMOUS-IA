@@ -1,0 +1,24 @@
+{
+  "name": "FAMOUS-AI",
+  "version": "1.0.0",
+  "description": "WhatsApp bot using Baileys, AI integration, and Node.js",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^6.0.0", 
+    "chalk": "^5.2.0", 
+    "fs": "0.0.1-security",
+    "node-cache": "^5.1.2",
+    "pino": "^8.11.0", 
+    "readline": "^1.3.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "author": "Famous-Tech",
+  "license": "MIT"
+}
