@@ -4,7 +4,7 @@
   "description": "WhatsApp bot using Baileys, AI integration, and Node.js",
   "main": "main.js",
   "scripts": {
-    "start": "node main.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
