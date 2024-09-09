@@ -72,7 +72,7 @@ async function startBot() {
             // Envoie un message à l'owner pour indiquer que le bot est connecté
             const ownerJid = `${phoneNumber}@s.whatsapp.net`;
             await bot.sendMessage(ownerJid, {
-                text: `FAMOUS-AI Connected Successfully, version: ${packageInfo.version}`,
+                text: `*FAMOUS-AI Connected Successfully, version: ${packageInfo.version}*`,
             });
         }
         if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
@@ -91,16 +91,16 @@ async function startBot() {
         if (text) {
             console.log(`Received message from ${sender}: ${text}`);
 
-            // Vérifie si l'utilisateur a envoyé la commande PING ou UPTIME
-            if (text.toLowerCase() === "ping") {
-                const pingResponse = ping();
-                await bot.sendMessage(sender, { text: pingResponse });
+            // Vérifie si l'utilisateur a envoyé la commande "dis uptime" ou "dis ping"
+            if (text.toLowerCase() === ".uptime") {
+                const uptimeResponse = uptime();
+                await bot.sendMessage(sender, { text: uptimeResponse });
                 return;
             }
 
-            if (text.toLowerCase() === "uptime") {
-                const uptimeResponse = uptime();
-                await bot.sendMessage(sender, { text: uptimeResponse });
+            if (text.toLowerCase() === ".ping") {
+                const pingResponse = ping();
+                await bot.sendMessage(sender, { text: pingResponse });
                 return;
             }
 
