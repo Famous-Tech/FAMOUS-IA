@@ -3,7 +3,7 @@ import { Boom } from '@hapi/boom';
 import fs from 'fs';
 import chalk from 'chalk';
 import readline from 'readline';
-import { makeInMemoryStore, useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, PHONENUMBER_MCC } from '@whiskeysockets/baileys';
+import { makeInMemoryStore, useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, PHONENUMBER_MCC, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys';
 import NodeCache from 'node-cache';
 import Pino from 'pino';
 import { generateResponse } from './ai.js'; // Génération de réponse avec support multi-langue
@@ -16,7 +16,7 @@ const store = makeInMemoryStore({
 });
 
 let phoneNumber = "50943782508"; // Numéro de téléphone par défaut
-
+let owner = JSON.parse(fs.readFileSync('./database/owner.json'));
 
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 const useMobile = process.argv.includes("--mobile");
@@ -113,15 +113,6 @@ async function startBot() {
 }
 
 startBot();
-
-// Supprimez cette partie car elle utilise `require`
-// let file = require.resolve(__filename);
-// fs.watchFile(file, () => {
-//     fs.unwatchFile(file);
-//     console.log(chalk.redBright(`Update ${__filename}`));
-//     delete require.cache[file];
-//     require(file);
-// });
 
 process.on('uncaughtException', function (err) {
     let e = String(err);
