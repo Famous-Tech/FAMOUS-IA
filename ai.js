@@ -29,9 +29,9 @@ const websiteLinks = {
 };
 
 const initialMessage = {
-    en: "I'm currently unavailable. Would you like to talk to my AI assistant?",
-    fr: "Je ne suis pas disponible pour le moment. Souhaitez-vous parler à mon intelligence artificielle ?",
-    ht: "Mwen pa disponib kounye a. Èske ou ta renmen pale ak asistan AI mwen an?"
+    en: "I'm currently unavailable. Would you like to talk to my AI assistant?\n\n1. Yes\n2. No\n\nReply with the number that suits you.",
+    fr: "Je ne suis pas disponible pour le moment. Souhaitez-vous parler à mon intelligence artificielle ?\n\n1. Oui\n2. Non\n\nRépondez avec le chiffre qui vous convient.",
+    ht: "Mwen pa disponib kounye a. Èske ou ta renmen pale ak asistan AI mwen an?\n\n1. Wi\n2. Non\n\nReponn ak chif ki apwopriye ou."
 };
 
 const suggestions = {
@@ -82,70 +82,142 @@ const faq = {
     ]
 };
 
-// Détecter la langue du texte
-function detectLanguage(text) {
-    if (/services|recruitment|website|blog|hosting/i.test(text)) {
-        return 'en';
-    } else if (/services|recrutement|site|blog|hébergement/i.test(text)) {
-        return 'fr';
-    } else if (/sèvis|rekritman|sit|blog|hosting/i.test(text)) {
-        return 'ht';
+const greetings = {
+    en: {
+        morning: "Good morning! How can I assist you today?",
+        afternoon: "Good afternoon! How can I assist you today?",
+        evening: "Good evening! How can I assist you today?"
+    },
+    fr: {
+        morning: "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
+        afternoon: "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
+        evening: "Bonsoir ! Comment puis-je vous aider aujourd'hui ?"
+    },
+    ht: {
+        morning: "Bonjou ! Koman mwen ka ede ou jodi a ?",
+        afternoon: "Bon apre-midi ! Koman mwen ka ede ou jodi a ?",
+        evening: "Bonsoir ! Koman mwen ka ede ou jodi a ?"
     }
-    // Default language
-    return 'en';
+};
+
+const creatorMessage = {
+    en: "I was created by the Famous Tech Group to assist you with various tasks.",
+    fr: "J'ai été créé par le Famous Tech Group pour vous aider avec diverses tâches.",
+    ht: "Mwen kreye pa Gwoup Teknoloji Famous pou ede ou ak divès travay."
+};
+
+const countryToLanguage = {
+    '1': 'en', // USA
+    '33': 'fr', // France
+    '509': 'ht', // Haiti
+    '228': 'fr', // Togo
+    '242': 'fr', // Congo
+    '221': 'fr', // Senegal
+    '237': 'fr', // Cameroon
+    '229': 'fr', // Benin
+    '225': 'fr', // Ivory Coast
+    '233': 'en', // Ghana
+    '234': 'en', // Nigeria
+    '254': 'en', // Kenya
+    '256': 'en', // Uganda
+    '260': 'en', // Zambia
+    '263': 'en', // Zimbabwe
+    '265': 'en', // Malawi
+    '266': 'en', // Lesotho
+    '267': 'en', // Botswana
+    '268': 'en', // Eswatini
+    '269': 'fr', // Comoros
+};
+
+function detectLanguage(phoneNumber) {
+    const countryCode = phoneNumber.substring(0, 3);
+    return countryToLanguage[countryCode] || 'en'; // Default to English if country code not found
 }
 
-async function generateResponse(text, isFirstInteraction) {
-    const lang = detectLanguage(text);
+async function generateResponse(text, phoneNumber, isFirstInteraction) {
+    const lang = detectLanguage(phoneNumber);
     
     if (isFirstInteraction) {
         return {
-            text: initialMessage[lang],
-            buttons: generateButtons(["Yes", "No"]),
-            headerType: 1
+            text: initialMessage[lang]
         };
     }
 
     const lowerText = text.toLowerCase();
 
-    if (lowerText.includes("yes") || lowerText.includes("oui") || lowerText.includes("wi")) {
+    if (lowerText === "1" || lowerText === "oui" || lowerText === "wi") {
         return {
-            text: `Here are some suggestions:`,
-            buttons: generateButtons(suggestions[lang]),
-            headerType: 1
+            text: `Here are some suggestions:\n\n1. ${suggestions[lang][0]}\n2. ${suggestions[lang][1]}\n3. ${suggestions[lang][2]}\n4. ${suggestions[lang][3]}\n5. ${suggestions[lang][4]}\n\nReply with the number that suits you.`
         };
     }
 
-    if (lowerText.includes("services")) {
+    if (lowerText === "2" || lowerText === "non") {
         return {
-            text: `Here are the services we offer:`,
-            buttons: generateButtons(services[lang]),
-            headerType: 1
+            text: "Thank you for your interest. If you change your mind, feel free to reach out again."
         };
     }
 
-    if (lowerText.includes("recruitment") || lowerText.includes("recrutement") || lowerText.includes("rekritman")) {
+    if (lowerText === "1" || lowerText.includes("services") || lowerText.includes("sèvis") || lowerText.includes("service")) {
+        return {
+            text: `Here are the services we offer:\n\n1. ${services[lang][0]}\n2. ${services[lang][1]}\n3. ${services[lang][2]}\n4. ${services[lang][3]}\n5. ${services[lang][4]}\n\nReply with the number that suits you.`
+        };
+    }
+
+    if (lowerText === "2" || lowerText.includes("recruitment") || lowerText.includes("recrutement") || lowerText.includes("rekritman")) {
         return {
             text: `Here is the link to our recruitment website: ${websiteLinks.recruitment}`
         };
     }
 
-    if (lowerText.includes("services website") || lowerText.includes("site de services") || lowerText.includes("sit sèvis")) {
+    if (lowerText === "3" || lowerText.includes("services website") || lowerText.includes("site de services") || lowerText.includes("sit sèvis")) {
         return {
             text: `Here is the link to our services website: ${websiteLinks.services}`
         };
     }
 
-    if (lowerText.includes("blog")) {
+    if (lowerText === "4" || lowerText.includes("blog")) {
         return {
             text: `Here is the link to our blog: ${websiteLinks.blog}`
         };
     }
 
-    if (lowerText.includes("hosting")) {
+    if (lowerText === "5" || lowerText.includes("hosting") || lowerText.includes("hébergement") || lowerText.includes("hosting")) {
         return {
             text: faq[lang][2], // Réponse sur l'hébergement web
         };
+    }
+
+    if (lowerText.includes("bonjour") || lowerText.includes("good morning") || lowerText.includes("salut") || lowerText.includes("hello")) {
+        const currentHour = new Date().getHours();
+        let greeting;
+        if (currentHour >= 5 && currentHour < 12) {
+            greeting = greetings[lang].morning;
+        } else if (currentHour >= 12 && currentHour < 18) {
+            greeting = greetings[lang].afternoon;
+        } else {
+            greeting = greetings[lang].evening;
+        }
+        return { text: greeting };
+    }
+
+    if (lowerText.includes("who created you") || lowerText.includes("qui t'a créé") || lowerText.includes("ki kreye w")) {
+        return { text: creatorMessage[lang] };
+    }
+
+    if (lowerText.includes("pricing") || lowerText.includes("prix") || lowerText.includes("pri")) {
+        return { text: faq[lang][0] };
+    }
+
+    if (lowerText.includes("support") || lowerText.includes("soutien") || lowerText.includes("sèvis kliyan")) {
+        return { text: faq[lang][1] };
+    }
+
+    if (lowerText.includes("updates") || lowerText.includes("mises à jour") || lowerText.includes("mizajou")) {
+        return { text: faq[lang][3] };
+    }
+
+    if (lowerText.includes("custom services") || lowerText.includes("services personnalisés") || lowerText.includes("sèvis pèsonalize")) {
+        return { text: faq[lang][4] };
     }
 
     return { text: "I don't understand your request. Could you please rephrase?" };
