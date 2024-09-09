@@ -55,7 +55,7 @@ function generateButtons(buttonTextArray) {
     }));
 }
 
-// Détecter la langue du texte
+// Détecter la langue du texte😪
 function detectLanguage(text) {
     if (/services|recruitment|site/i.test(text)) {
         return 'en';
