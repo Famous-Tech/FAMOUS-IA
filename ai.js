@@ -1,27 +1,24 @@
 const services = {
     en: [
-        "We offer blog development services.",
-        "We provide digital marketing solutions.",
-        "We offer portfolio creation services.",
-        "We provide web development services.",
-        "We provide e-commerce development solutions.",
-        "We offer graphic design services."
+        "Web Development",
+        "Portfolio Creation",
+        "Blog Development",
+        "Top-Up Website",
+        "E-commerce Website"
     ],
     fr: [
-        "Nous offrons des services de développement de blogs.",
-        "Nous fournissons des solutions de marketing digital.",
-        "Nous offrons des services de création de portfolio.",
-        "Nous fournissons des services de développement web.",
-        "Nous proposons des solutions de développement e-commerce.",
-        "Nous offrons des services de conception graphique."
+        "Développement Web",
+        "Création de Portfolio",
+        "Développement de Blog",
+        "Site de Recharge",
+        "Site de E-commerce"
     ],
     ht: [
-        "Nou bay sèvis devlopman blog.",
-        "Nou ofri solisyon maketing dijital.",
-        "Nou bay sèvis kreye portfolio.",
-        "Nou ofri sèvis devlopman entènèt.",
-        "Nou bay solisyon devlopman e-commerce.",
-        "Nou ofri sèvis konsepsyon grafik."
+        "Devlopman Entènèt",
+        "Kreyasyon Portfolio",
+        "Devlopman Blog",
+        "Sit Rechaje",
+        "Sit E-commerce"
     ]
 };
 
@@ -84,15 +81,6 @@ const faq = {
         "Pou sèvis pèsonalize, pa ezite kontakte nou dirèkteman."
     ]
 };
-
-// Générer des boutons interactifs
-function generateButtons(buttonTextArray) {
-    return buttonTextArray.map((buttonText, index) => ({
-        buttonId: `id_button_${index + 1}`, // Identifiant unique pour chaque bouton
-        buttonText: { displayText: buttonText },
-        type: 1
-    }));
-}
 
 // Détecter la langue du texte
 function detectLanguage(text) {
