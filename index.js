@@ -22,7 +22,13 @@ const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 const useMobile = process.argv.includes("--mobile");
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-const question = (text) => new Promise((resolve) => rl.question(text, resolve));
+const question = (text) => new Promise((resolve) => {
+    if (!rl.closed) {
+        rl.question(text, resolve);
+    } else {
+        resolve(phoneNumber);
+    }
+});
 
 const firstInteractionCache = new NodeCache({ stdTTL: 600 }); // Cache pour gérer la première interaction
 
@@ -69,7 +75,6 @@ async function startBot() {
             console.log(chalk.bgBlack(chalk.redBright("Start with country code of your WhatsApp Number, Example : +50943782508")));
             phoneNumberInput = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number +6286\nFor example: +50943782508 : `)));
             phoneNumberInput = phoneNumberInput.replace(/[^0-9]/g, '');
-            rl.close();
         }
 
         setTimeout(async () => {
