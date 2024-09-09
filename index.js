@@ -70,7 +70,8 @@ async function startBot() {
             console.log(chalk.yellow(`🌿 Connected to => ` + JSON.stringify(bot.user, null, 2)));
 
             // Envoie un message à l'owner pour indiquer que le bot est connecté
-            await bot.sendMessage(50943782508@s.whatsapp.net, {
+            const ownerJid = `${phoneNumber}@s.whatsapp.net`;
+            await bot.sendMessage(ownerJid, {
                 text: `FAMOUS-AI Connected Successfully, version: ${packageInfo.version}`,
             });
         }
