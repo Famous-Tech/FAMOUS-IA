@@ -86,7 +86,7 @@ async function startBot() {
 
     bot.ev.on('messages.upsert', async chatUpdate => {
         const message = chatUpdate.messages[0];
-        if (!message.message) return;
+        if (!message.message || message.key.fromMe) return; // Ignorer les messages envoyés par le bot
         const sender = message.key.remoteJid;
         const text = message.message.conversation || message.message.extendedTextMessage?.text;
 
@@ -98,7 +98,6 @@ async function startBot() {
                 firstInteractionCache.set(sender, true);
             }
 
-            // Utilisation de l'IA pour générer une réponse avec support multilingue (Français, Anglais, Créole)
             const reply = await generateResponse(text, isFirstInteraction);
             await bot.sendMessage(sender, reply);
         }
