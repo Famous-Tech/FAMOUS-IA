@@ -101,9 +101,9 @@ const greetings = {
 };
 
 const creatorMessage = {
-    en: "I was created by the Famous Tech Group to assist you with various tasks.",
-    fr: "J'ai été créé par le Famous Tech Group pour vous aider avec diverses tâches.",
-    ht: "Mwen kreye pa Gwoup Teknoloji Famous pou ede ou ak divès travay."
+    en: "I was created by *Famous Tech*  to assist you with various tasks.",
+    fr: "J'ai été créé par le grand Famous Tech pour vous aider avec diverses tâches.",
+    ht: "se *FAMOUS-TECH* ki kreye m wi 🙂."
 };
 
 const countryToLanguage = {
