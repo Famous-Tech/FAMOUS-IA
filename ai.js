@@ -101,9 +101,9 @@ const greetings = {
 };
 
 const creatorMessage = {
-    en: "I was created by *Famous Tech*  to assist you with various tasks.",
-    fr: "J'ai été créé par le grand Famous Tech pour vous aider avec diverses tâches.",
-    ht: "se *FAMOUS-TECH* ki kreye m wi 🙂."
+    en: "I was created by the Famous Tech Group to assist you with various tasks.",
+    fr: "J'ai été créé par le Famous Tech Group pour vous aider avec diverses tâches.",
+    ht: "Mwen kreye pa Gwoup Teknoloji Famous pou ede ou ak divès travay."
 };
 
 const countryToLanguage = {
@@ -218,6 +218,51 @@ async function generateResponse(text, phoneNumber, isFirstInteraction) {
 
     if (lowerText.includes("custom services") || lowerText.includes("services personnalisés") || lowerText.includes("sèvis pèsonalize")) {
         return { text: faq[lang][4] };
+    }
+
+    // Nouvelles règles
+    if (lowerText.includes("comment ça va") || lowerText.includes("how are you")) {
+        return { text: "I'm just an AI, but I'm here to help you!" };
+    }
+
+    if (lowerText.includes("contact") || lowerText.includes("contacter") || lowerText.includes("kontakte")) {
+        return { text: "You can contact us at support@famous-tech-group.com or call us at +1234567890." };
+    }
+
+    if (lowerText.includes("combien coûte") || lowerText.includes("how much does") || lowerText.includes("kijan anko")) {
+        return { text: "Our pricing varies depending on the service. Please contact us for a detailed quote." };
+    }
+
+    if (lowerText.includes("e-commerce") || lowerText.includes("site de e-commerce") || lowerText.includes("sit e-commerce")) {
+        return { text: `For an e-commerce website, our pricing starts at $500. Please contact us for a detailed quote.` };
+    }
+
+    if (lowerText.includes("blog") || lowerText.includes("développement de blog") || lowerText.includes("devlopman blog")) {
+        return { text: `For a blog development, our pricing starts at $300. Please contact us for a detailed quote.` };
+    }
+
+    if (lowerText.includes("phone number") || lowerText.includes("numéro de téléphone") || lowerText.includes("nimewo telefòn")) {
+        return { text: "You can reach us at +1234567890." };
+    }
+
+    if (lowerText.includes("email") || lowerText.includes("e-mail") || lowerText.includes("imel")) {
+        return { text: "You can contact us at support@famous-tech-group.com." };
+    }
+
+    if (lowerText.includes("recommend") || lowerText.includes("recommandez") || lowerText.includes("rekòmande")) {
+        return { text: `For an e-commerce website, we recommend our "E-commerce Website" service. For a blog, we recommend our "Blog Development" service.` };
+    }
+
+    if (lowerText.includes("confirm") || lowerText.includes("confirmer") || lowerText.includes("konfime")) {
+        return { text: "Yes, I can confirm that information for you." };
+    }
+
+    if (lowerText.includes("when") || lowerText.includes("quand") || lowerText.includes("kan")) {
+        return { text: "You can expect a response within 24 hours." };
+    }
+
+    if (lowerText.includes("language") || lowerText.includes("langue") || lowerText.includes("lang")) {
+        return { text: "I can speak English, French, and Haitian Creole. Which language would you prefer?" };
     }
 
     return { text: "I don't understand your request. Could you please rephrase?" };
