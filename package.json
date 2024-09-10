@@ -1,6 +1,6 @@
 {
   "name": "FAMOUS-AI",
-  "version": "1.0.0",
+  "version": "2.0",
   "description": "WhatsApp bot using Baileys, AI integration, and Node.js",
   "main": "index.js",
   "type": "module",
