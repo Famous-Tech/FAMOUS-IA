@@ -67,7 +67,7 @@ async function startBot() {
     bot.ev.on("connection.update", async (s) => {
         const { connection, lastDisconnect } = s;
         if (connection == "open") {
-            console.log(chalk.yellow(`✅🌐🙂🌿 Connected to => ` + JSON.stringify(bot.user, null, 2)));
+            console.log(chalk.yellow(`🌿 Connected to => ` + JSON.stringify(bot.user, null, 2)));
 
             // Envoie un message à l'owner pour indiquer que le bot est connecté
             const ownerJid = `${phoneNumber}@s.whatsapp.net`;
