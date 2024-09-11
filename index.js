@@ -6,12 +6,7 @@ import readline from 'readline';
 import { makeInMemoryStore, useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, PHONENUMBER_MCC, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys';
 import NodeCache from 'node-cache';
 import Pino from 'pino';
-import { generateResponse } from './ai.js';
-import { uptime } from './cmds/UPTIME.js';
-import { ping } from './cmds/PING.js';
-
-// Charger le fichier package.json
-const packageInfo = JSON.parse(fs.readFileSync('./package.json'));
+import { generateResponse } from './ai.js'; // Génération de réponse avec support multi-langue
 
 const store = makeInMemoryStore({
     logger: pino().child({
@@ -63,17 +58,56 @@ async function startBot() {
 
     store.bind(bot.ev);
 
-    // Envoie un message à l'admin lorsque le bot se connecte
+    if (pairingCode && !bot.authState.creds.registered) {
+        if (useMobile) throw new Error('Cannot use pairing code with mobile api');
+
+        let phoneNumberInput;
+        const timeout = setTimeout(() => {
+            phoneNumberInput = phoneNumber;
+            console.log(chalk.bgBlack(chalk.greenBright(`Using default phone number: ${phoneNumber}`)));
+        }, 30000);
+
+        phoneNumberInput = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number 😍\nFor example: +50943782508 : `)));
+        clearTimeout(timeout);
+        phoneNumberInput = phoneNumberInput.replace(/[^0-9]/g, '');
+
+        if (!Object.keys(PHONENUMBER_MCC).some(v => phoneNumberInput.startsWith(v))) {
+            console.log(chalk.bgBlack(chalk.redBright("Start with country code of your WhatsApp Number, Example : +50943782508")));
+            phoneNumberInput = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number +6286\nFor example: +50943782508 : `)));
+            phoneNumberInput = phoneNumberInput.replace(/[^0-9]/g, '');
+        }
+
+        setTimeout(async () => {
+            let code = await bot.requestPairingCode(phoneNumberInput);
+            code = code?.match(/.{1,4}/g)?.join("-") || code;
+            console.log(chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)));
+        }, 3000);
+    }
+
+    bot.ev.on('messages.upsert', async chatUpdate => {
+        const message = chatUpdate.messages[0];
+        if (!message.message) return;
+        const sender = message.key.remoteJid;
+        const text = message.message.conversation || message.message.extendedTextMessage?.text;
+
+        if (text) {
+            console.log(`Received message from ${sender}: ${text}`);
+
+            const isFirstInteraction = !firstInteractionCache.get(sender);
+            if (isFirstInteraction) {
+                firstInteractionCache.set(sender, true);
+            }
+
+            // Utilisation de l'IA pour générer une réponse avec support multilingue (Français, Anglais, Créole)
+            const reply = await generateResponse(text, isFirstInteraction);
+            await bot.sendMessage(sender, reply);
+        }
+    });
+
     bot.ev.on("connection.update", async (s) => {
         const { connection, lastDisconnect } = s;
         if (connection == "open") {
-            console.log(chalk.yellow(`🌿 Connected to => ` + JSON.stringify(bot.user, null, 2)));
-
-            // Envoie un message à l'owner pour indiquer que le bot est connecté
-            const ownerJid = `${phoneNumber}@s.whatsapp.net`;
-            await bot.sendMessage(ownerJid, {
-                text: `*FAMOUS-AI Connected Successfully, version: ${packageInfo.version}*`,
-            });
+            console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(bot.user, null, 2)));
         }
         if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
             startBot();
@@ -81,38 +115,6 @@ async function startBot() {
     });
 
     bot.ev.on('creds.update', saveCreds);
-
-    bot.ev.on('messages.upsert', async chatUpdate => {
-        const message = chatUpdate.messages[0];
-        if (!message.message || message.key.fromMe || message.key.participant) return; // Ignorer les groupes et messages envoyés par le bot
-        const sender = message.key.remoteJid;
-        const text = message.message.conversation || message.message.extendedTextMessage?.text;
-
-        if (text) {
-            console.log(`Received message from ${sender}: ${text}`);
-
-            // Vérifie si l'utilisateur a envoyé la commande "dis uptime" ou "dis ping"
-            if (text.toLowerCase() === ".uptime") {
-                const uptimeResponse = uptime();
-                await bot.sendMessage(sender, { text: uptimeResponse });
-                return;
-            }
-
-            if (text.toLowerCase() === ".ping") {
-                const pingResponse = ping();
-                await bot.sendMessage(sender, { text: pingResponse });
-                return;
-            }
-
-            const isFirstInteraction = !firstInteractionCache.get(sender);
-            if (isFirstInteraction) {
-                firstInteractionCache.set(sender, true);
-            }
-
-            const reply = await generateResponse(text, isFirstInteraction);
-            await bot.sendMessage(sender, reply);
-        }
-    });
 }
 
 startBot();
