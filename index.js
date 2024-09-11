@@ -15,7 +15,7 @@ const packageInfo = JSON.parse(fs.readFileSync('./package.json'));
 
 const store = makeInMemoryStore({
     logger: pino().child({
-        level: 'debug',
+        level: 'silent',
         stream: 'store'
     })
 });
