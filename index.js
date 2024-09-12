@@ -1,6 +1,7 @@
 import pino from 'pino';
 import { Boom } from '@hapi/boom';
 import fs from 'fs';
+import path from 'path';
 import chalk from 'chalk';
 import readline from 'readline';
 import { makeInMemoryStore, useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, PHONENUMBER_MCC, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys';
@@ -119,7 +120,9 @@ async function startBot() {
             console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(bot.user, null, 2)));
 
             // Envoi d'un message de confirmation à $phoneNumber
-            const packageVersion = require('./package.json').version;
+            const packageJsonPath = path.resolve(path.dirname(import.meta.url), 'package.json');
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+            const packageVersion = packageJson.version;
             await bot.sendMessage(phoneNumber + "@s.whatsapp.net", {
                 text: `FAMOUS-IA activé avec succès | Version : ${packageVersion}`
             });
