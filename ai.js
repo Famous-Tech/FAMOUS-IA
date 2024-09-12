@@ -130,142 +130,152 @@ const countryToLanguage = {
 };
 
 function detectLanguage(phoneNumber) {
-    const countryCode = phoneNumber.substring(0, 3);
-    return countryToLanguage[countryCode] || 'en'; // Default to English if country code not found
+    try {
+        const countryCode = String(phoneNumber).substring(0, 3);
+        return countryToLanguage[countryCode] || 'en'; // Default to English if country code not found
+    } catch (error) {
+        console.error("Error detecting language:", error);
+        return 'en'; // Default to English in case of error
+    }
 }
 
 async function generateResponse(text, phoneNumber, isFirstInteraction) {
-    const lang = detectLanguage(phoneNumber);
-    
-    if (isFirstInteraction) {
-        return {
-            text: initialMessage[lang]
-        };
-    }
-
-    const lowerText = text.toLowerCase();
-
-    if (lowerText === "1" || lowerText === "oui" || lowerText === "wi") {
-        return {
-            text: `Here are some suggestions:\n\n1. ${suggestions[lang][0]}\n2. ${suggestions[lang][1]}\n3. ${suggestions[lang][2]}\n4. ${suggestions[lang][3]}\n5. ${suggestions[lang][4]}\n\nReply with the number that suits you.`
-        };
-    }
-
-    if (lowerText === "2" || lowerText === "non") {
-        return {
-            text: "Thank you for your interest. If you change your mind, feel free to reach out again."
-        };
-    }
-
-    if (lowerText === "1" || lowerText.includes("services") || lowerText.includes("sèvis") || lowerText.includes("service")) {
-        return {
-            text: `Here are the services we offer:\n\n1. ${services[lang][0]}\n2. ${services[lang][1]}\n3. ${services[lang][2]}\n4. ${services[lang][3]}\n5. ${services[lang][4]}\n\nReply with the number that suits you.`
-        };
-    }
-
-    if (lowerText === "2" || lowerText.includes("recruitment") || lowerText.includes("recrutement") || lowerText.includes("rekritman")) {
-        return {
-            text: `Here is the link to our recruitment website: ${websiteLinks.recruitment}`
-        };
-    }
-
-    if (lowerText === "3" || lowerText.includes("services website") || lowerText.includes("site de services") || lowerText.includes("sit sèvis")) {
-        return {
-            text: `Here is the link to our services website: ${websiteLinks.services}`
-        };
-    }
-
-    if (lowerText === "4" || lowerText.includes("blog")) {
-        return {
-            text: `Here is the link to our blog: ${websiteLinks.blog}`
-        };
-    }
-
-    if (lowerText === "5" || lowerText.includes("hosting") || lowerText.includes("hébergement") || lowerText.includes("hosting")) {
-        return {
-            text: faq[lang][2], // Réponse sur l'hébergement web
-        };
-    }
-
-    if (lowerText.includes("bonjour") || lowerText.includes("good morning") || lowerText.includes("salut") || lowerText.includes("hello")) {
-        const currentHour = new Date().getHours();
-        let greeting;
-        if (currentHour >= 5 && currentHour < 12) {
-            greeting = greetings[lang].morning;
-        } else if (currentHour >= 12 && currentHour < 18) {
-            greeting = greetings[lang].afternoon;
-        } else {
-            greeting = greetings[lang].evening;
+    try {
+        const lang = detectLanguage(phoneNumber);
+        
+        if (isFirstInteraction) {
+            return {
+                text: initialMessage[lang]
+            };
         }
-        return { text: greeting };
-    }
 
-    if (lowerText.includes("who created you") || lowerText.includes("qui t'a créé") || lowerText.includes("ki kreye w")) {
-        return { text: creatorMessage[lang] };
-    }
+        const lowerText = text.toLowerCase();
 
-    if (lowerText.includes("pricing") || lowerText.includes("prix") || lowerText.includes("pri")) {
-        return { text: faq[lang][0] };
-    }
+        if (lowerText === "1" || lowerText === "oui" || lowerText === "wi") {
+            return {
+                text: `Here are some suggestions:\n\n1. ${suggestions[lang][0]}\n2. ${suggestions[lang][1]}\n3. ${suggestions[lang][2]}\n4. ${suggestions[lang][3]}\n5. ${suggestions[lang][4]}\n\nReply with the number that suits you.`
+            };
+        }
 
-    if (lowerText.includes("support") || lowerText.includes("soutien") || lowerText.includes("sèvis kliyan")) {
-        return { text: faq[lang][1] };
-    }
+        if (lowerText === "2" || lowerText === "non") {
+            return {
+                text: "Thank you for your interest. If you change your mind, feel free to reach out again."
+            };
+        }
 
-    if (lowerText.includes("updates") || lowerText.includes("mises à jour") || lowerText.includes("mizajou")) {
-        return { text: faq[lang][3] };
-    }
+        if (lowerText === "1" || lowerText.includes("services") || lowerText.includes("sèvis") || lowerText.includes("service")) {
+            return {
+                text: `Here are the services we offer:\n\n1. ${services[lang][0]}\n2. ${services[lang][1]}\n3. ${services[lang][2]}\n4. ${services[lang][3]}\n5. ${services[lang][4]}\n\nReply with the number that suits you.`
+            };
+        }
 
-    if (lowerText.includes("custom services") || lowerText.includes("services personnalisés") || lowerText.includes("sèvis pèsonalize")) {
-        return { text: faq[lang][4] };
-    }
+        if (lowerText === "2" || lowerText.includes("recruitment") || lowerText.includes("recrutement") || lowerText.includes("rekritman")) {
+            return {
+                text: `Here is the link to our recruitment website: ${websiteLinks.recruitment}`
+            };
+        }
 
-    // Nouvelles règles
-    if (lowerText.includes("comment ça va") || lowerText.includes("how are you")) {
-        return { text: "I'm just an AI, but I'm here to help you!" };
-    }
+        if (lowerText === "3" || lowerText.includes("services website") || lowerText.includes("site de services") || lowerText.includes("sit sèvis")) {
+            return {
+                text: `Here is the link to our services website: ${websiteLinks.services}`
+            };
+        }
 
-    if (lowerText.includes("contact") || lowerText.includes("contacter") || lowerText.includes("kontakte")) {
-        return { text: "You can contact us at support@famous-tech-group.com or call us at +1234567890." };
-    }
+        if (lowerText === "4" || lowerText.includes("blog")) {
+            return {
+                text: `Here is the link to our blog: ${websiteLinks.blog}`
+            };
+        }
 
-    if (lowerText.includes("combien coûte") || lowerText.includes("how much does") || lowerText.includes("kijan anko")) {
-        return { text: "Our pricing varies depending on the service. Please contact us for a detailed quote." };
-    }
+        if (lowerText === "5" || lowerText.includes("hosting") || lowerText.includes("hébergement") || lowerText.includes("hosting")) {
+            return {
+                text: faq[lang][2], // Réponse sur l'hébergement web
+            };
+        }
 
-    if (lowerText.includes("e-commerce") || lowerText.includes("site de e-commerce") || lowerText.includes("sit e-commerce")) {
-        return { text: `For an e-commerce website, our pricing starts at $500. Please contact us for a detailed quote.` };
-    }
+        if (lowerText.includes("bonjour") || lowerText.includes("good morning") || lowerText.includes("salut") || lowerText.includes("hello")) {
+            const currentHour = new Date().getHours();
+            let greeting;
+            if (currentHour >= 5 && currentHour < 12) {
+                greeting = greetings[lang].morning;
+            } else if (currentHour >= 12 && currentHour < 18) {
+                greeting = greetings[lang].afternoon;
+            } else {
+                greeting = greetings[lang].evening;
+            }
+            return { text: greeting };
+        }
 
-    if (lowerText.includes("blog") || lowerText.includes("développement de blog") || lowerText.includes("devlopman blog")) {
-        return { text: `For a blog development, our pricing starts at $300. Please contact us for a detailed quote.` };
-    }
+        if (lowerText.includes("who created you") || lowerText.includes("qui t'a créé") || lowerText.includes("ki kreye w")) {
+            return { text: creatorMessage[lang] };
+        }
 
-    if (lowerText.includes("phone number") || lowerText.includes("numéro de téléphone") || lowerText.includes("nimewo telefòn")) {
-        return { text: "You can reach us at +1234567890." };
-    }
+        if (lowerText.includes("pricing") || lowerText.includes("prix") || lowerText.includes("pri")) {
+            return { text: faq[lang][0] };
+        }
 
-    if (lowerText.includes("email") || lowerText.includes("e-mail") || lowerText.includes("imel")) {
-        return { text: "You can contact us at support@famous-tech-group.com." };
-    }
+        if (lowerText.includes("support") || lowerText.includes("soutien") || lowerText.includes("sèvis kliyan")) {
+            return { text: faq[lang][1] };
+        }
 
-    if (lowerText.includes("recommend") || lowerText.includes("recommandez") || lowerText.includes("rekòmande")) {
-        return { text: `For an e-commerce website, we recommend our "E-commerce Website" service. For a blog, we recommend our "Blog Development" service.` };
-    }
+        if (lowerText.includes("updates") || lowerText.includes("mises à jour") || lowerText.includes("mizajou")) {
+            return { text: faq[lang][3] };
+        }
 
-    if (lowerText.includes("confirm") || lowerText.includes("confirmer") || lowerText.includes("konfime")) {
-        return { text: "Yes, I can confirm that information for you." };
-    }
+        if (lowerText.includes("custom services") || lowerText.includes("services personnalisés") || lowerText.includes("sèvis pèsonalize")) {
+            return { text: faq[lang][4] };
+        }
 
-    if (lowerText.includes("when") || lowerText.includes("quand") || lowerText.includes("kan")) {
-        return { text: "You can expect a response within 24 hours." };
-    }
+        // Nouvelles règles
+        if (lowerText.includes("comment ça va") || lowerText.includes("how are you")) {
+            return { text: "I'm just an AI, but I'm here to help you!" };
+        }
 
-    if (lowerText.includes("language") || lowerText.includes("langue") || lowerText.includes("lang")) {
-        return { text: "I can speak English, French, and Haitian Creole. Which language would you prefer?" };
-    }
+        if (lowerText.includes("contact") || lowerText.includes("contacter") || lowerText.includes("kontakte")) {
+            return { text: "You can contact us at support@famous-tech-group.com or call us at +1234567890." };
+        }
 
-    return { text: "I don't understand your request. Could you please rephrase?" };
+        if (lowerText.includes("combien coûte") || lowerText.includes("how much does") || lowerText.includes("kijan anko")) {
+            return { text: "Our pricing varies depending on the service. Please contact us for a detailed quote." };
+        }
+
+        if (lowerText.includes("e-commerce") || lowerText.includes("site de e-commerce") || lowerText.includes("sit e-commerce")) {
+            return { text: `For an e-commerce website, our pricing starts at $500. Please contact us for a detailed quote.` };
+        }
+
+        if (lowerText.includes("blog") || lowerText.includes("développement de blog") || lowerText.includes("devlopman blog")) {
+            return { text: `For a blog development, our pricing starts at $300. Please contact us for a detailed quote.` };
+        }
+
+        if (lowerText.includes("phone number") || lowerText.includes("numéro de téléphone") || lowerText.includes("nimewo telefòn")) {
+            return { text: "You can reach us at +1234567890." };
+        }
+
+        if (lowerText.includes("email") || lowerText.includes("e-mail") || lowerText.includes("imel")) {
+            return { text: "You can contact us at support@famous-tech-group.com." };
+        }
+
+        if (lowerText.includes("recommend") || lowerText.includes("recommandez") || lowerText.includes("rekòmande")) {
+            return { text: `For an e-commerce website, we recommend our "E-commerce Website" service. For a blog, we recommend our "Blog Development" service.` };
+        }
+
+        if (lowerText.includes("confirm") || lowerText.includes("confirmer") || lowerText.includes("konfime")) {
+            return { text: "Yes, I can confirm that information for you." };
+        }
+
+        if (lowerText.includes("when") || lowerText.includes("quand") || lowerText.includes("kan")) {
+            return { text: "You can expect a response within 24 hours." };
+        }
+
+        if (lowerText.includes("language") || lowerText.includes("langue") || lowerText.includes("lang")) {
+            return { text: "I can speak English, French, and Haitian Creole. Which language would you prefer?" };
+        }
+
+        return { text: "I don't understand your request. Could you please rephrase?" };
+    } catch (error) {
+        console.error("Error generating response:", error);
+        return { text: "Sorry, I encountered an error. Please try again later." };
+    }
 }
 
 export { generateResponse };
