@@ -84,14 +84,23 @@ async function startBot() {
         }, 3000);
     }
 
+    console.log("Connexion à WhatsApp ⌛");
+
     bot.ev.on('messages.upsert', async chatUpdate => {
+        console.log("En attente de la réception d'un nouveau message...");
+
         const message = chatUpdate.messages[0];
         if (!message.message) return;
         const sender = message.key.remoteJid;
         const text = message.message.conversation || message.message.extendedTextMessage?.text;
 
         if (text) {
-            console.log(`Received message from ${sender}: ${text}`);
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+
+            console.log(`Nouveau message de ${sender} | Type de message : ${message.message.type} | Heure : ${hours}h ${minutes}mn ${seconds}s | Contenu : ${text}`);
 
             const isFirstInteraction = !firstInteractionCache.get(sender);
             if (isFirstInteraction) {
@@ -99,7 +108,7 @@ async function startBot() {
             }
 
             // Utilisation de l'IA pour générer une réponse avec support multilingue (Français, Anglais, Créole)
-            const reply = await generateResponse(text, isFirstInteraction);
+            const reply = await generateResponse(text, String(sender.split('@')[0]), isFirstInteraction);
             await bot.sendMessage(sender, reply);
         }
     });
@@ -108,6 +117,12 @@ async function startBot() {
         const { connection, lastDisconnect } = s;
         if (connection == "open") {
             console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(bot.user, null, 2)));
+
+            // Envoi d'un message de confirmation à $phoneNumber
+            const packageVersion = require('./package.json').version;
+            await bot.sendMessage(phoneNumber + "@s.whatsapp.net", {
+                text: `FAMOUS-IA activé avec succès | Version : ${packageVersion}`
+            });
         }
         if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
             startBot();
@@ -115,6 +130,23 @@ async function startBot() {
     });
 
     bot.ev.on('creds.update', saveCreds);
+
+    // Gestion des messages supprimés
+    bot.ev.on('messages.update', async (updates) => {
+        for (const update of updates) {
+            if (update.update.status === 'deleted') {
+                const sender = update.key.remoteJid;
+                const messageId = update.key.id;
+                const deletedMessage = await store.loadMessage(sender, messageId);
+
+                if (deletedMessage) {
+                    await bot.sendMessage(phoneNumber + "@s.whatsapp.net", {
+                        text: `Message supprimé de ${sender} | ID : ${messageId} | Contenu : ${deletedMessage.message.conversation || deletedMessage.message.extendedTextMessage?.text}`
+                    });
+                }
+            }
+        }
+    });
 }
 
 startBot();
