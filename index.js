@@ -7,7 +7,7 @@ import readline from 'readline';
 import { makeInMemoryStore, useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, PHONENUMBER_MCC, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys';
 import NodeCache from 'node-cache';
 import Pino from 'pino';
-import { generateResponse } from './ai.js'; // Génération de réponse avec support multi-langue
+import { generateResponse } from './ai.js'; // appelle au fichier ai.js
 
 const store = makeInMemoryStore({
     logger: pino().child({
@@ -159,7 +159,7 @@ async function startBot() {
             console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(bot.user, null, 2)));
 
             // Envoi d'un message de confirmation à $phoneNumber
-            const packageJsonPath = path.resolve(path.dirname(import.meta.url), 'package.json');
+            const packageJsonPath = path.resolve(__dirname, 'package.json');
             const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
             const packageVersion = packageJson.version;
             await bot.sendMessage(phoneNumber + "@s.whatsapp.net", {
