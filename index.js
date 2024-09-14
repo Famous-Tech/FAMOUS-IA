@@ -32,6 +32,8 @@ const question = (text) => new Promise((resolve) => {
 });
 
 const firstInteractionCache = new NodeCache({ stdTTL: 600 }); // Cache pour gérer la première interaction
+const messageCounter = new NodeCache({ stdTTL: 60 }); // Compteur de messages par minute
+const errorMessageCache = new NodeCache({ stdTTL: 60 }); // Cache pour éviter les messages d'erreur en boucle
 
 async function startBot() {
     let { version, isLatest } = await fetchLatestBaileysVersion();
@@ -95,6 +97,14 @@ async function startBot() {
         const sender = message.key.remoteJid;
         const text = message.message.conversation || message.message.extendedTextMessage?.text;
 
+        // Ignorer les messages du bot lui-même
+        if (sender === bot.user.id) return;
+
+        // Ignorer les images, vidéos et stickers
+        if (message.message.imageMessage || message.message.videoMessage || message.message.stickerMessage) {
+            return;
+        }
+
         if (text) {
             const now = new Date();
             const hours = now.getHours().toString().padStart(2, '0');
@@ -106,6 +116,35 @@ async function startBot() {
             const isFirstInteraction = !firstInteractionCache.get(sender);
             if (isFirstInteraction) {
                 firstInteractionCache.set(sender, true);
+            }
+
+            // Limitation du nombre de messages par minute
+            const messageCount = messageCounter.get(sender) || 0;
+            if (messageCount >= 10) {
+                if (!errorMessageCache.get(sender)) {
+                    await bot.sendMessage(sender, { text: "Je suis désolé, je ne peux pas répondre à plus de 10 messages par minute. Veuillez réessayer plus tard." });
+                    errorMessageCache.set(sender, true);
+                }
+                return;
+            }
+            messageCounter.set(sender, messageCount + 1);
+
+            // Activation du bot dans les groupes
+            if (sender.endsWith('@g.us')) {
+                const groupMembers = await bot.groupMetadata(sender).then(metadata => metadata.participants.map(p => p.id));
+                if (!groupMembers.includes(`${phoneNumber}@s.whatsapp.net`) || text !== '.on') {
+                    return;
+                }
+            }
+
+            // Réponse à la commande .ping
+            if (sender === `${phoneNumber}@s.whatsapp.net` && text === '.ping') {
+                const startTime = new Date();
+                await bot.sendMessage(sender, { text: "Pong!" });
+                const endTime = new Date();
+                const responseTime = endTime - startTime;
+                await bot.sendMessage(sender, { text: `Temps de réponse : ${responseTime} ms` });
+                return;
             }
 
             // Utilisation de l'IA pour générer une réponse avec support multilingue (Français, Anglais, Créole)
