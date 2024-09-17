@@ -44,7 +44,7 @@ async function startBot() {
         browser: ["Ubuntu", "Chrome", "20.0.04"],
         auth: {
             creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: "fatal" }).child({ level: "fatal" })),
+            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
         },
         markOnlineOnConnect: true,
         generateHighQualityLinkPreview: true,
