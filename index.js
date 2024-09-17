@@ -1,12 +1,10 @@
 import pino from 'pino';
-import { Boom } from '@hapi/boom';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import readline from 'readline';
 import { makeInMemoryStore, useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, PHONENUMBER_MCC, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys';
 import NodeCache from 'node-cache';
-import Pino from 'pino';
 import { generateResponse } from './ai.js'; // Génération de réponse avec support multi-langue
 
 const store = makeInMemoryStore({
