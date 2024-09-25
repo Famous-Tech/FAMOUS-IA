@@ -1,9 +1,12 @@
 import config from './config.js';
+import OpenAI from "openai";
+import dotenv from 'dotenv';
+dotenv.config();
 
 const initialMessage = {
     en: "I'm currently unavailable. Would you like to talk to my AI assistant?\n\n1. Yes\n2. No\n\nReply with the number that suits you.",
     fr: "Je ne suis pas disponible pour le moment. Souhaitez-vous parler à mon intelligence artificielle ?\n\n1. Oui\n2. Non\n\nRépondez avec le chiffre qui vous convient.",
-    ht: "Mwen pa disponib kounye a. Èske ou ta renmen pale ak asistan AI mwen an?\n\n1. Wi\n2. Non\n\nReponn ak chif ki apwopriye ou."
+    ht: "Mwen pa disponib kounye a. Èske ou ta renmen pale ak entelijans atifisyel  mwen an?\n\n1. Wi\n2. Non\n\nReponn ak chif ki apwopriye ou."
 };
 
 const countryToLanguage = {
@@ -38,6 +41,11 @@ function detectLanguage(phoneNumber) {
         return 'en'; // Default to English in case of error
     }
 }
+
+const openai = new OpenAI({
+    baseURL: 'https://api.deepseek.com',
+    apiKey: process.env.DEEPSEEK_API_KEY
+});
 
 async function generateResponse(text, phoneNumber, isFirstInteraction) {
     try {
@@ -81,11 +89,28 @@ async function generateResponse(text, phoneNumber, isFirstInteraction) {
             }
         }
 
-        return { text: "I don't understand your request. Could you please rephrase?" };
+        // Appeler l'API DeepSeek pour générer une réponse
+        const deepSeekResponse = await callDeepSeekAPI(text, lang);
+        return { text: deepSeekResponse };
     } catch (error) {
         console.error("Error generating response:", error);
         return { text: "Sorry, I encountered an error. Please try again later." };
     }
 }
 
-export { generateResponse };
+async function callDeepSeekAPI(text, lang) {
+    try {
+        const prompt = `You are an AI assistant called FAMOUS-AI for the FAMOUS-TECH-GROUP an HAITIAN company offering various services. The user is asking about your services, pricing, or how to contact you. Here are the details of your services and pricing:\n\n1. Web Development: Starting at 1000 Gourdes\n2. Portfolio Creation: Starting at 500 Gourdes\n3. Blog Development: Starting at 1300 Gourdes\n4. Top-Up Website: Starting at 1500 Gourdes\n5. E-commerce Website: Starting at 2500$\n\nYou can be contacted via email at famoustechht@gmail.com or by phone at +509 43782508.\n\nThe user's message is: ${text}\n\nPlease generate a response in ${lang} language.`;
+        const completion = await openai.chat.completions.create({
+            messages: [{ role: "system", content: prompt }],
+            model: "deepseek-chat",
+        });
+
+        return completion.choices[0].message.content.trim();
+    } catch (error) {
+        console.error("Error calling DeepSeek API:", error);
+        return "Sorry, I encountered an error. Please try again later.";
+    }
+}
+
+export { generateResponse, callDeepSeekAPI };
