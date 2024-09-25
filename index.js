@@ -5,7 +5,9 @@ import chalk from 'chalk';
 import readline from 'readline';
 import { makeInMemoryStore, useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, PHONENUMBER_MCC, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys';
 import NodeCache from 'node-cache';
-import { generateResponse } from './ai.js'; // Génération de réponse avec support multi-langue
+import { generateResponse, callDeepSeekAPI } from './ai.js'; // Génération de réponse avec support multi-langue
+import dotenv from 'dotenv';
+dotenv.config();
 
 const store = makeInMemoryStore({
     logger: pino().child({
@@ -32,6 +34,7 @@ const question = (text) => new Promise((resolve) => {
 const firstInteractionCache = new NodeCache({ stdTTL: 600 }); // Cache pour gérer la première interaction
 const messageCounter = new NodeCache({ stdTTL: 60 }); // Compteur de messages par minute
 const errorMessageCache = new NodeCache({ stdTTL: 60 }); // Cache pour éviter les messages d'erreur en boucle
+const responseCache = new NodeCache({ stdTTL: 60 }); // Cache pour stocker les réponses générées
 
 async function startBot() {
     let { version, isLatest } = await fetchLatestBaileysVersion();
@@ -147,7 +150,10 @@ async function startBot() {
 
             // Utilisation de l'IA pour générer une réponse avec support multilingue (Français, Anglais, Créole)
             const reply = await generateResponse(text, String(sender.split('@')[0]), isFirstInteraction);
-            await bot.sendMessage(sender, reply);
+            if (reply) {
+                await bot.sendMessage(sender, reply);
+                responseCache.set(text, reply); // Stocker la réponse générée
+            }
         }
     });
 
