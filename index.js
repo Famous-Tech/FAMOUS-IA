@@ -3,209 +3,139 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import readline from 'readline';
-import { makeInMemoryStore, useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, PHONENUMBER_MCC, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys';
 import NodeCache from 'node-cache';
-import { generateResponse, callDeepSeekAPI } from './ai.js'; // Génération de réponse avec support multi-langue
+import { generateResponse, callAIAPI } from './ai.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const store = makeInMemoryStore({
-    logger: pino().child({
-        level: 'silent',
-        stream: 'store'
-    })
-});
+// Baileys Import
+import pkg from '@whiskeysockets/baileys';
+const { 
+  makeInMemoryStore, 
+  useMultiFileAuthState, 
+  fetchLatestBaileysVersion, 
+  makeWASocket, 
+  PHONENUMBER_MCC,
+  makeCacheableSignalKeyStore,
+  jidNormalizedUser
+} = pkg;
 
-let phoneNumber = "50943782508"; // Numéro de téléphone par défaut
-let owner = JSON.parse(fs.readFileSync('./database/owner.json'));
+// Configuration
+const CONFIG = {
+  phoneNumber: process.env.PHONE_NUMBER || "50943782508",
+  ownerPath: './database/owner.json',
+  sessionPath: './session',
+  maxMessagesPerMinute: 20,
+  cacheTTL: 600
+};
 
-const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
-const useMobile = process.argv.includes("--mobile");
+// Logging
+const logger = pino({ level: 'silent' });
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-const question = (text) => new Promise((resolve) => {
-    if (!rl.closed) {
-        rl.question(text, resolve);
-    } else {
-        resolve(phoneNumber);
-    }
-});
+// Load Owner Configuration
+const loadOwnerConfig = () => {
+  try {
+    return JSON.parse(fs.readFileSync(CONFIG.ownerPath, 'utf8'));
+  } catch (error) {
+    console.error(chalk.red('Error loading owner configuration:'), error);
+    return [{ id: CONFIG.phoneNumber }];
+  }
+};
 
-const firstInteractionCache = new NodeCache({ stdTTL: 600 }); // Cache pour gérer la première interaction
-const messageCounter = new NodeCache({ stdTTL: 60 }); // Compteur de messages par minute
-const errorMessageCache = new NodeCache({ stdTTL: 60 }); // Cache pour éviter les messages d'erreur en boucle
-const responseCache = new NodeCache({ stdTTL: 60 }); // Cache pour stocker les réponses générées
+const owner = loadOwnerConfig();
+const phoneNumber = CONFIG.phoneNumber;
+
+// Caches
+const firstInteractionCache = new NodeCache({ stdTTL: CONFIG.cacheTTL });
+const messageCounter = new NodeCache({ stdTTL: 60 });
+const errorMessageCache = new NodeCache({ stdTTL: 60 });
 
 async function startBot() {
-    let { version, isLatest } = await fetchLatestBaileysVersion();
-    const { state, saveCreds } = await useMultiFileAuthState(`./session`);
-    const msgRetryCounterCache = new NodeCache();
+  const { version } = await fetchLatestBaileysVersion();
+  const { state, saveCreds } = await useMultiFileAuthState(CONFIG.sessionPath);
 
-    const bot = makeWASocket({
-        logger: pino({ level: 'silent' }),
-        printQRInTerminal: !pairingCode,
-        browser: ["Ubuntu", "Chrome", "20.0.04"],
-        auth: {
-            creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
-        },
-        markOnlineOnConnect: true,
-        generateHighQualityLinkPreview: true,
-        getMessage: async (key) => {
-            let jid = jidNormalizedUser(key.remoteJid);
-            let msg = await store.loadMessage(jid, key.id);
-            return msg?.message || "";
-        },
-        msgRetryCounterCache,
-        defaultQueryTimeoutMs: undefined,
-    });
+  const bot = makeWASocket({
+    logger,
+    printQRInTerminal: true,
+    browser: ["FAMOUS-AI", "Chrome", "20.0.04"],
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, logger)
+    },
+    markOnlineOnConnect: true
+  });
 
-    store.bind(bot.ev);
+  // Message Handling
+  bot.ev.on('messages.upsert', async (m) => {
+    const msg = m.messages[0];
+    if (!msg.message || msg.key.fromMe) return;
 
-    if (pairingCode && !bot.authState.creds.registered) {
-        if (useMobile) throw new Error('Cannot use pairing code with mobile api');
+    const sender = msg.key.remoteJid;
+    const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
 
-        let phoneNumberInput;
-        const timeout = setTimeout(() => {
-            phoneNumberInput = phoneNumber;
-            console.log(chalk.bgBlack(chalk.greenBright(`Using default phone number: ${phoneNumber}`)));
-        }, 30000);
+    // Rate Limiting
+    const messageCount = messageCounter.get(sender) || 0;
+    if (messageCount >= CONFIG.maxMessagesPerMinute) {
+      await bot.sendMessage(sender, { 
+        text: "🚫 Trop de messages. Veuillez patienter quelques instants." 
+      });
+      return;
+    }
+    messageCounter.set(sender, messageCount + 1);
 
-        phoneNumberInput = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number 😍\nFor example: +50943782508 : `)));
-        clearTimeout(timeout);
-        phoneNumberInput = phoneNumberInput.replace(/[^0-9]/g, '');
-
-        if (!Object.keys(PHONENUMBER_MCC).some(v => phoneNumberInput.startsWith(v))) {
-            console.log(chalk.bgBlack(chalk.redBright("Start with country code of your WhatsApp Number, Example : +50943782508")));
-            phoneNumberInput = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number +6286\nFor example: +50943782508 : `)));
-            phoneNumberInput = phoneNumberInput.replace(/[^0-9]/g, '');
-        }
-
-        setTimeout(async () => {
-            let code = await bot.requestPairingCode(phoneNumberInput);
-            code = code?.match(/.{1,4}/g)?.join("-") || code;
-            console.log(chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)));
-        }, 3000);
+    // First Interaction Detection
+    const isFirstInteraction = !firstInteractionCache.get(sender);
+    if (isFirstInteraction) {
+      firstInteractionCache.set(sender, true);
     }
 
-    console.log("Connexion à WhatsApp ⌛");
+    // Generate Response
+    try {
+      const response = await generateResponse(text, sender.split('@')[0], isFirstInteraction);
+      if (response && response.text) {
+        await bot.sendMessage(sender, { text: response.text });
+      }
+    } catch (error) {
+      console.error(chalk.red('Response Generation Error:'), error);
+    }
+  });
 
-    bot.ev.on('messages.upsert', async chatUpdate => {
-        console.log("En attente de la réception d'un nouveau message...");
+  // Connection Update
+  bot.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect } = update;
+    
+    if (connection === 'open') {
+      console.log(chalk.green('✅ WhatsApp Bot Connected Successfully'));
+      
+      // Send startup message to owner
+      await bot.sendMessage(`${phoneNumber}@s.whatsapp.net`, { 
+        text: "🚀 FAMOUS-AI Bot started and ready to assist!" 
+      });
+    }
+    
+    if (connection === 'close') {
+      const shouldReconnect = lastDisconnect.error?.output?.statusCode !== 401;
+      console.log(shouldReconnect 
+        ? chalk.yellow('Reconnecting...') 
+        : chalk.red('Connection closed. Need to scan QR again.')
+      );
+      if (shouldReconnect) {
+        startBot();
+      }
+    }
+  });
 
-        const message = chatUpdate.messages[0];
-        if (!message.message) return;
-        const sender = message.key.remoteJid;
-        const text = message.message.conversation || message.message.extendedTextMessage?.text;
-
-        // Ignorer les messages du bot lui-même
-        if (sender === bot.user.id) return;
-
-        // Ignorer les images, vidéos et stickers
-        if (message.message.imageMessage || message.message.videoMessage || message.message.stickerMessage) {
-            return;
-        }
-
-        if (text) {
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-
-            console.log(`Nouveau message de ${sender} | Type de message : ${message.message.type} | Heure : ${hours}h ${minutes}mn ${seconds}s | Contenu : ${text}`);
-
-            const isFirstInteraction = !firstInteractionCache.get(sender);
-            if (isFirstInteraction) {
-                firstInteractionCache.set(sender, true);
-            }
-
-            // Limitation du nombre de messages par minute
-            const messageCount = messageCounter.get(sender) || 0;
-            if (messageCount >= 10) {
-                if (!errorMessageCache.get(sender)) {
-                    await bot.sendMessage(sender, { text: "Je suis désolé, je ne peux pas répondre à plus de 10 messages par minute. Veuillez réessayer plus tard." });
-                    errorMessageCache.set(sender, true);
-                }
-                return;
-            }
-            messageCounter.set(sender, messageCount + 1);
-
-            // Activation du bot dans les groupes
-            if (sender.endsWith('@g.us')) {
-                const groupMembers = await bot.groupMetadata(sender).then(metadata => metadata.participants.map(p => p.id));
-                if (!groupMembers.includes(`${phoneNumber}@s.whatsapp.net`) || text !== '.on') {
-                    return;
-                }
-            }
-
-            // Réponse à la commande .ping
-            if (sender === `${phoneNumber}@s.whatsapp.net` && text === '.ping') {
-                const startTime = new Date();
-                await bot.sendMessage(sender, { text: "Pong!" });
-                const endTime = new Date();
-                const responseTime = endTime - startTime;
-                await bot.sendMessage(sender, { text: `Temps de réponse : ${responseTime} ms` });
-                return;
-            }
-
-            // Utilisation de l'IA pour générer une réponse avec support multilingue (Français, Anglais, Créole)
-            const reply = await generateResponse(text, String(sender.split('@')[0]), isFirstInteraction);
-            if (reply) {
-                await bot.sendMessage(sender, reply);
-                responseCache.set(text, reply); // Stocker la réponse générée
-            }
-        }
-    });
-
-    bot.ev.on("connection.update", async (s) => {
-        const { connection, lastDisconnect } = s;
-        if (connection == "open") {
-            console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(bot.user, null, 2)));
-
-            // Envoi d'un message de confirmation à $phoneNumber
-            const packageJsonPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), 'package.json');
-            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-            const packageVersion = packageJson.version;
-            await bot.sendMessage(phoneNumber + "@s.whatsapp.net", {
-                text: `FAMOUS-IA activé avec succès | Version : ${packageVersion}`
-            });
-        }
-        if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
-            startBot();
-        }
-    });
-
-    bot.ev.on('creds.update', saveCreds);
-
-    // Gestion des messages supprimés
-    bot.ev.on('messages.update', async (updates) => {
-        for (const update of updates) {
-            if (update.update.status === 'deleted') {
-                const sender = update.key.remoteJid;
-                const messageId = update.key.id;
-                const deletedMessage = await store.loadMessage(sender, messageId);
-
-                if (deletedMessage) {
-                    await bot.sendMessage(phoneNumber + "@s.whatsapp.net", {
-                        text: `Message supprimé de ${sender} | ID : ${messageId} | Contenu : ${deletedMessage.message.conversation || deletedMessage.message.extendedTextMessage?.text}`
-                    });
-                }
-            }
-        }
-    });
+  bot.ev.on('creds.update', saveCreds);
 }
 
-startBot();
-
-process.on('uncaughtException', function (err) {
-    let e = String(err);
-    if (e.includes("conflict")) return;
-    if (e.includes("Socket connection timeout")) return;
-    if (e.includes("not-authorized")) return;
-    if (e.includes("already-exists")) return;
-    if (e.includes("rate-overlimit")) return;
-    if (e.includes("Connection Closed")) return;
-    if (e.includes("Timed Out")) return;
-    if (e.includes("Value not found")) return;
-    console.log('Caught exception: ', err);
+// Error Handling
+process.on('uncaughtException', (err) => {
+  console.error(chalk.red('Uncaught Exception:'), err);
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(chalk.red('Unhandled Rejection at:'), promise, 'reason:', reason);
+});
+
+// Start Bot
+startBot();
