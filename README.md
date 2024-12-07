@@ -81,7 +81,8 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 
 ---
 
-Pour toute question ou support, veuillez contacter [Vos Informations de Contact].
+Pour toute question ou support, veuillez contacter [Contact](Contact.md)
+.
 
 ---
 
@@ -168,7 +169,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-For any questions or support, please contact [Your Contact Information].
+For any questions or support, please contact [Contact](Contact.md).
 
 ---
 
